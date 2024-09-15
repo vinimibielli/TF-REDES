@@ -85,12 +85,8 @@ int main()
 
         // sendto() -- send messages
         
-        //int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&clientAddr, addrLen);
-        //if (sendLen < 0)
-        //{
-            //std::cerr << "Error sending data" << std::endl;
-           // continue;
-       // }
+        int sendLen = sendto(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&clientAddr, addrLen);
+        
     }
 
     // close()
