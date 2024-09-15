@@ -59,6 +59,7 @@ int main()
     {
 
         // recvfrom() -- receive messages
+        int sendvLen;
         int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&clientAddr, &addrLen);
         if (recvLen < 0)
         {
@@ -73,9 +74,14 @@ int main()
 
         if(Clients.find(addressClient) == Clients.end()){
             Clients[addressClient] = buffer;
-            sendto(sockfd, MESSAGE_SERVER, strlen(MESSAGE_SERVER), 0, (struct sockaddr *)&clientAddr, addrLen);
+            sendvLen = sendto(sockfd, MESSAGE_SERVER, strlen(MESSAGE_SERVER), 0, (struct sockaddr *)&clientAddr, addrLen);
+            if(sendvLen < 0){
+                std::cerr << "Error to send welcome message" << std::endl;
+            }
             std::cout << "New client added: " << buffer << " | IP: " << addressClient << std::endl;
         }
+
+
 
         // sendto() -- send messages
         
