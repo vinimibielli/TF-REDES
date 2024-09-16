@@ -30,6 +30,9 @@ int main()
     struct sockaddr_in clientAddr;
     socklen_t addrLen = sizeof(clientAddr);
     std::map<std::string, std::string> Clients;
+    std::map<std::string, struct sockaddr_in> ClientsAddress;
+    bool newclient = false;
+    std::string newClientMessage;
 
     // socket() -- create socket
 
@@ -68,28 +71,43 @@ int main()
         }
 
         buffer[recvLen] = '\0'; // Null-terminate the received data
-        std::cout << "Received from client: " << buffer << std::endl;
 
         std::string addressClient = getAddressString(clientAddr);
 
         if(Clients.find(addressClient) == Clients.end()){
+            newclient = true;
             Clients[addressClient] = buffer;
+            ClientsAddress[addressClient] = clientAddr;
             sendvLen = sendto(sockfd, MESSAGE_SERVER, strlen(MESSAGE_SERVER), 0, (struct sockaddr *)&clientAddr, addrLen);
             if(sendvLen < 0){
                 std::cerr << "Error to send welcome message" << std::endl;
             }
-            std::cout << "New client added: " << buffer << " | IP: " << addressClient << std::endl;
+            std::cout << "New client added: " << Clients[addressClient] << " | IP: " << addressClient << std::endl;
+        } else{
+            std::cout << "Received from client " << Clients[addressClient] << ": " << buffer << std::endl;
         }
-
-
-
         // sendto() -- send messages
-        
-        int sendLen = sendto(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&clientAddr, addrLen);
+        if(Clients.size() > 1){ 
+            for(auto &client : Clients){
+                   if(client.first != addressClient){
+                    struct sockaddr_in targetAddr = ClientsAddress[client.first];
+                    if(newclient){
+                    newclient = false;
+                    newClientMessage = Clients[addressClient] + " has joined the server.";
+                    } else{
+                        newClientMessage = Clients[addressClient] + ": " + buffer;
+                        }
+                        sendvLen = sendto(sockfd, newClientMessage.c_str(), newClientMessage.length(), 0, (struct sockaddr *)&targetAddr, addrLen);
+                    if(sendvLen < 0){
+                        std::cerr << "Error to send message" << std::endl;
+                }
+            }
+            }
+        }
         
     }
 
     // close()
-
+    
     close(sockfd);
 }

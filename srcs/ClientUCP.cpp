@@ -21,13 +21,31 @@ void errorFunction(const std::string &message)
     exit(EXIT_FAILURE);
 }
 
-void sendHeartbeat(int sockfd, struct sockaddr &serverAddr, socklen_t &addrLen){
-    int sendLen = sendto(sockfd, HEARTBEAT_SIGNAL, strlen(HEARTBEAT_SIGNAL), 0, (struct sockaddr *)&serverAddr, addrLen);
-        if (sendLen < 0)
+void receiveMessages(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen)
+{
+    char buffer[BUFFER_SIZE];
+    while (true)
+    {
+        int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddr, &addrLen);
+        if (recvLen < 0)
         {
-            std::cerr << "Error to send heartbeat" << std::endl;
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                continue;
+            }
+            else
+            {
+                std::cerr << "Error to receive the message" << std::endl;
+            }
         }
-    std::this_thread::sleep_for(std::chrono::seconds(HEARTBEAT_TIME));
+        else
+        {
+            buffer[recvLen] = '\0';
+            std::cout << buffer << std::endl;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 }
 
 int main()
@@ -56,10 +74,10 @@ int main()
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORT);
 
-    // recvfrom() and sendto()
+    // recvfrom(), sendto() and heartbeat -- functions to receive and send messages
 
-    //std::thread heartbeatTHREAD(sendHeartbeat, sockfd, std::ref(serverAddr), std::ref(addrLen));
-    //heartbeatTHREAD.detach();
+    std::thread receiveThread(receiveMessages, sockfd, std::ref(serverAddr), std::ref(addrLen));
+    receiveThread.detach();
 
     while (true)
     {
@@ -95,7 +113,7 @@ int main()
         }
         else
         {
-            std::cout << userIdentification << ": ";
+            //std::cout << userIdentification << ": ";
             std::getline(std::cin, messageUser);
         }
 
@@ -103,22 +121,6 @@ int main()
         if (sendLen < 0)
         {
             std::cerr << "Error sending message" << std::endl;
-        }
-
-        //Non-blocking receive
-
-        int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddr, &addrLen);
-        if (recvLen < 0)
-        {
-            if(errno == EAGAIN || errno == EWOULDBLOCK){
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                continue;
-            } else{
-            std::cerr << "Error to receive the message" << std::endl;
-            }
-        } else {
-        buffer[recvLen] = '\0';
-        std::cout << buffer << std::endl;
         }
     }
 
