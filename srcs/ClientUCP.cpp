@@ -21,32 +21,27 @@ void errorFunction(const std::string &message)
     exit(EXIT_FAILURE);
 }
 
-void receiveMessages(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen)
+void receiveMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen)
 {
     char buffer[BUFFER_SIZE];
     while (true)
     {
-        int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddr, &addrLen);
+    int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddr, &addrLen);
         if (recvLen < 0)
         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-            {
+            if(errno == EAGAIN || errno == EWOULDBLOCK){
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                continue;
+            } else{
+            std::cerr << "Error to receive the message" << std::endl;
             }
-            else
-            {
-                std::cerr << "Error to receive the message" << std::endl;
-            }
-        }
-        else
-        {
-            buffer[recvLen] = '\0';
-            std::cout << buffer << std::endl;
+        } else {
+        buffer[recvLen] = '\0';
+        std::cout << buffer << std::endl;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
+
 
 int main()
 {
@@ -74,10 +69,10 @@ int main()
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORT);
 
-    // recvfrom(), sendto() and heartbeat -- functions to receive and send messages
-
-    std::thread receiveThread(receiveMessages, sockfd, std::ref(serverAddr), std::ref(addrLen));
+    // recvfrom() and sendto()
+    std::thread receiveThread(receiveMessage, sockfd, std::ref(serverAddr), std::ref(addrLen));
     receiveThread.detach();
+
 
     while (true)
     {
@@ -123,6 +118,6 @@ int main()
             std::cerr << "Error sending message" << std::endl;
         }
     }
-
+    
     close(sockfd);
 }

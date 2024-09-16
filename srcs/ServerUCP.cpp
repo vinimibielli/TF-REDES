@@ -11,12 +11,14 @@
 #define BUFFER_SIZE 1024
 #define MESSAGE_SERVER "Connected to the server."
 
-void errorFunction(const std::string &message){
+void errorFunction(const std::string &message)
+{
     std::cerr << message << std::endl;
     exit(EXIT_FAILURE);
 }
 
-std::string getAddressString(const struct sockaddr_in &address){
+std::string getAddressString(const struct sockaddr_in &address)
+{
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(address.sin_addr), ip, INET_ADDRSTRLEN);
     return std::string(ip) + ":" + std::to_string(ntohs(address.sin_port));
@@ -74,40 +76,50 @@ int main()
 
         std::string addressClient = getAddressString(clientAddr);
 
-        if(Clients.find(addressClient) == Clients.end()){
+        if (Clients.find(addressClient) == Clients.end())
+        {
             newclient = true;
             Clients[addressClient] = buffer;
             ClientsAddress[addressClient] = clientAddr;
             sendvLen = sendto(sockfd, MESSAGE_SERVER, strlen(MESSAGE_SERVER), 0, (struct sockaddr *)&clientAddr, addrLen);
-            if(sendvLen < 0){
+            if (sendvLen < 0)
+            {
                 std::cerr << "Error to send welcome message" << std::endl;
             }
             std::cout << "New client added: " << Clients[addressClient] << " | IP: " << addressClient << std::endl;
-        } else{
+        }
+        else
+        {
             std::cout << "Received from client " << Clients[addressClient] << ": " << buffer << std::endl;
         }
         // sendto() -- send messages
-        if(Clients.size() > 1){ 
-            for(auto &client : Clients){
-                   if(client.first != addressClient){
+        if (Clients.size() > 1)
+        {
+            for (auto &client : Clients)
+            {
+                if (client.first != addressClient)
+                {
                     struct sockaddr_in targetAddr = ClientsAddress[client.first];
-                    if(newclient){
-                    newclient = false;
-                    newClientMessage = Clients[addressClient] + " has joined the server.";
-                    } else{
+                    if (newclient)
+                    {
+                        newclient = false;
+                        newClientMessage = Clients[addressClient] + " has joined the server.";
+                    }
+                    else
+                    {
                         newClientMessage = Clients[addressClient] + ": " + buffer;
-                        }
-                        sendvLen = sendto(sockfd, newClientMessage.c_str(), newClientMessage.length(), 0, (struct sockaddr *)&targetAddr, addrLen);
-                    if(sendvLen < 0){
+                    }
+                    sendvLen = sendto(sockfd, newClientMessage.c_str(), newClientMessage.length(), 0, (struct sockaddr *)&targetAddr, addrLen);
+                    if (sendvLen < 0)
+                    {
                         std::cerr << "Error to send message" << std::endl;
+                    }
                 }
             }
-            }
         }
-        
     }
 
     // close()
-    
+
     close(sockfd);
 }
