@@ -10,6 +10,8 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define MESSAGE_SERVER "Connected to the server."
+#define FILE_NOTIFICATION "FILE-TRANSFER"
+#define FILE_COMPLETE "FILE-COMPLETE"
 
 void errorFunction(const std::string &message)
 {
@@ -92,6 +94,28 @@ int main()
         {
             std::cout << "Received from client " << Clients[addressClient] << ": " << buffer << std::endl;
         }
+
+        //NEW CLIENT MESSAGE
+
+        if (newclient){
+            newclient = false;
+            newClientMessage = Clients[addressClient] + " has joined the server.";
+        }
+        else
+        {
+            if(buffer == FILE_NOTIFICATION){
+                newClientMessage = FILE_NOTIFICATION;
+            }
+            else if(buffer == FILE_COMPLETE){
+                newClientMessage = FILE_COMPLETE;
+            }
+            else{
+                newClientMessage = Clients[addressClient] + ": " + buffer;
+            }
+        }
+
+
+
         // sendto() -- send messages
         if (Clients.size() > 1)
         {
@@ -100,15 +124,7 @@ int main()
                 if (client.first != addressClient)
                 {
                     struct sockaddr_in targetAddr = ClientsAddress[client.first];
-                    if (newclient)
-                    {
-                        newclient = false;
-                        newClientMessage = Clients[addressClient] + " has joined the server.";
-                    }
-                    else
-                    {
-                        newClientMessage = Clients[addressClient] + ": " + buffer;
-                    }
+
                     sendvLen = sendto(sockfd, newClientMessage.c_str(), newClientMessage.length(), 0, (struct sockaddr *)&targetAddr, addrLen);
                     if (sendvLen < 0)
                     {
