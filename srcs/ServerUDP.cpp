@@ -10,6 +10,8 @@
 #define PORT 8080
 #define BUFFER_SIZE 1024
 #define MESSAGE_SERVER "Connected to the server."
+#define FILE_NOTIFICATION "FILE-TRANSFER"
+#define FILE_COMPLETE "FILE-COMPLETE"
 
 void errorFunction(const std::string &message)
 {
@@ -35,6 +37,7 @@ int main()
     std::map<std::string, struct sockaddr_in> ClientsAddress;
     bool newclient = false;
     std::string newClientMessage;
+    bool fileTransfer = false;
 
     // socket() -- create socket
 
@@ -92,6 +95,36 @@ int main()
         {
             std::cout << "Received from client " << Clients[addressClient] << ": " << buffer << std::endl;
         }
+
+        //NEW CLIENT MESSAGE
+
+        if (newclient){
+            newclient = false;
+            newClientMessage = Clients[addressClient] + " has joined the server.";
+        }
+        else
+        {
+            if(strcmp(buffer, FILE_NOTIFICATION) == 0){
+                newClientMessage = FILE_NOTIFICATION;
+                fileTransfer = true;
+
+            }
+            else if(strcmp(buffer, FILE_COMPLETE) == 0){
+                newClientMessage = FILE_COMPLETE;
+                fileTransfer = false;
+            }
+            else{
+                if(fileTransfer){
+                    newClientMessage = buffer;
+                }
+                else{
+                newClientMessage = Clients[addressClient] + ": " + buffer;
+                }
+            }
+        }
+
+
+
         // sendto() -- send messages
         if (Clients.size() > 1)
         {
@@ -100,15 +133,7 @@ int main()
                 if (client.first != addressClient)
                 {
                     struct sockaddr_in targetAddr = ClientsAddress[client.first];
-                    if (newclient)
-                    {
-                        newclient = false;
-                        newClientMessage = Clients[addressClient] + " has joined the server.";
-                    }
-                    else
-                    {
-                        newClientMessage = Clients[addressClient] + ": " + buffer;
-                    }
+
                     sendvLen = sendto(sockfd, newClientMessage.c_str(), newClientMessage.length(), 0, (struct sockaddr *)&targetAddr, addrLen);
                     if (sendvLen < 0)
                     {
