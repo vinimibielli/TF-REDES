@@ -9,9 +9,9 @@
 #include <thread>
 #include <mutex>
 
-#define PORT 8080
+#define PORT 8081
 #define BUFFER_SIZE 1024
-#define MESSAGE_SERVER "Connected to the server. /file to send a file"
+#define MESSAGE_SERVER "Connected to the server || /FILE to send a file"
 #define FILE_NOTIFICATION "FILE-TRANSFER"
 #define FILE_COMPLETE "FILE-COMPLETE"
 #define USERNAME_INFORMATION "Please inform your username: "
@@ -29,106 +29,128 @@ std::string getAddressString(const struct sockaddr_in &address)
     return std::string(ip) + ":" + std::to_string(ntohs(address.sin_port));
 }
 
-void handleClient(int clientSockfd, struct sockaddr_in clientAddr, std::map<int, std::string> &clients, std::map<int, struct sockaddr_in> &clientsAddress, std::mutex &clientsMutex)
+void handleClient(int clientSockfd, struct sockaddr_in clientAddr, std::map<int, std::string> &clients, std::mutex &clientsMutex)
 {
-    // char buffer[BUFFER_SIZE];
-    // bool fileTransfer = false;
-    // std::string newClientMessage;
-    // int sendLen;
-    // bool newclient = true;
+    char buffer[BUFFER_SIZE];
+    bool fileTransfer = false;
+    std::string newClientMessage;
+    int sendLen;
+    int recvLen;
 
-    // std::string addressClient = getAddressString(clientAddr);
+    std::string addressClient = getAddressString(clientAddr);
 
-    // sendLen = send(clientSockfd, USERNAME_INFORMATION, strlen(USERNAME_INFORMATION), 0);
-    // if (sendLen < 0)
-    // {
-    //     std::cerr << "Error sending username message" << std::endl;
-    // }
+    sendLen = send(clientSockfd, USERNAME_INFORMATION, strlen(USERNAME_INFORMATION), 0);
+    if (sendLen < 0)
+    {
+        std::cerr << "Error sending username message" << std::endl;
+    }
 
-    // recv(clientSockfd, buffer, BUFFER_SIZE, 0);
-    // buffer[strlen(buffer) - 1] = '\0';
+    recvLen = recv(clientSockfd, buffer, BUFFER_SIZE, 0);
+    buffer[recvLen] = '\0';
 
-    // std::lock_guard<std::mutex> lock(clientsMutex);
-    // clients[clientSockfd] = buffer;
-    // clientsAddress[clientSockfd] = clientAddr;
+    {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    clients[clientSockfd] = buffer;
+    }
 
-    // // Send welcome message
-    // sendLen = send(clientSockfd, MESSAGE_SERVER, strlen(MESSAGE_SERVER), 0);
-    // if (sendLen < 0)
-    // {
-    //     std::cerr << "Error sending welcome message" << std::endl;
-    // }
-    // std::cout << "New client added: " << addressClient << std::endl;
+    // Send welcome message
+    sendLen = send(clientSockfd, MESSAGE_SERVER, strlen(MESSAGE_SERVER), 0);
+    if (sendLen < 0)
+    {
+        std::cerr << "Error sending welcome message" << std::endl;
+    }
+    std::cout << "New client " << clients[clientSockfd] << " added: " << addressClient << std::endl;
 
-    // while (true)
-    // {
-    //     int recvLen = recv(clientSockfd, buffer, BUFFER_SIZE, 0);
-    //     if (recvLen <= 0)
-    //     {
-    //         if (recvLen == 0)
-    //         {
-    //             std::cout << "Client disconnected: " << addressClient << std::endl;
-    //         }
-    //         else
-    //         {
-    //             std::cerr << "Error receiving data from client: " << addressClient << std::endl;
-    //         }
-    //         close(clientSockfd);
-    //         {
-    //             std::lock_guard<std::mutex> lock(clientsMutex);
-    //             clients.erase(clientSockfd);
-    //             clientsAddress.erase(clientSockfd);
-    //         }
-    //         break;
-    //     }
+    // Send welcome message to the other clients
+    {
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        newClientMessage = clients[clientSockfd] + " has joined the server.";
+        for (const auto &client : clients)
+        {
+            if (client.first != clientSockfd)
+            {
+                sendLen = send(client.first, newClientMessage.c_str(), newClientMessage.length(), 0);
+                if (sendLen < 0)
+                {
+                    std::cerr << "Error sending message to client: " << client.second << std::endl;
+                }
+            }
+        }
+    }
 
-    //     buffer[recvLen] = '\0'; // Null-terminate the received data
+    while (true)
+    {
+        recvLen = recv(clientSockfd, buffer, BUFFER_SIZE, 0);
+        if (recvLen <= 0)
+        {
+            if (recvLen == 0)
+            {
+                std::cout << "Client disconnected: " << addressClient << std::endl;
+            }
+            else
+            {
+                std::cerr << "Error receiving data from client: " << addressClient << std::endl;
+            }
+            close(clientSockfd);
+            {
+                std::lock_guard<std::mutex> lock(clientsMutex);
+                newClientMessage = clients[clientSockfd] + " has left the server.";
+                for (const auto &client : clients)
+                {
+                    if (client.first != clientSockfd)
+                    {
+                        sendLen = send(client.first, newClientMessage.c_str(), newClientMessage.length(), 0);
+                        if (sendLen < 0)
+                        {
+                            std::cerr << "Error sending message to client: " << client.second << std::endl;
+                        }
+                    }
+                }
+                clients.erase(clientSockfd);
+            }
+            break;
+        }
 
-    //     std::cout << "Received from client " << addressClient << ": " << buffer << std::endl;
+        buffer[recvLen] = '\0'; // Null-terminate the received data
 
-    //     if(newclient){
-    //         newclient = false;
-    //         newClientMessage = clients[clientSockfd] + " has joined the server.";
-    //     }
-    //     else{
+        std::cout << "Received from client " << clients[clientSockfd] << ": " << buffer << std::endl;
 
-    //     if (strcmp(buffer, FILE_NOTIFICATION) == 0)
-    //     {
-    //         newClientMessage = FILE_NOTIFICATION;
-    //         fileTransfer = true;
-    //     }
-    //     else if (strcmp(buffer, FILE_COMPLETE) == 0)
-    //     {
-    //         newClientMessage = FILE_COMPLETE;
-    //         fileTransfer = false;
-    //     }
-    //     else
-    //     {
-    //         if (fileTransfer)
-    //         {
-    //             newClientMessage = buffer;
-    //         }
-    //         else
-    //         {
-    //             newClientMessage = addressClient + ": " + buffer;
-    //         }
-    //     }
-    //     }
+        if (strcmp(buffer, FILE_NOTIFICATION) == 0)
+        {
+            newClientMessage = FILE_NOTIFICATION;
+            fileTransfer = true;
+        }
+        else if (strcmp(buffer, FILE_COMPLETE) == 0)
+        {
+            newClientMessage = FILE_COMPLETE;
+            fileTransfer = false;
+        }
+        else
+        {
+            if (fileTransfer)
+            {
+                newClientMessage = buffer;
+            }
+            else
+            {
+                newClientMessage = clients[clientSockfd] + ": " + buffer;
+            }
+        }
 
-    //     // Broadcast message to other clients
-    //     std::lock_guard<std::mutex> lock(clientsMutex);
-    //     for (const auto &client : clients)
-    //     {
-    //         if (client.first != clientSockfd)
-    //         {
-    //             sendLen = send(client.first, newClientMessage.c_str(), newClientMessage.length(), 0);
-    //             if (sendLen < 0)
-    //             {
-    //                 std::cerr << "Error sending message to client: " << client.second << std::endl;
-    //             }
-    //         }
-    //     }
-    // }
+        // Broadcast message to other clients
+        std::lock_guard<std::mutex> lock(clientsMutex);
+        for (const auto &client : clients)
+        {
+            if (client.first != clientSockfd)
+            {
+                sendLen = send(client.first, newClientMessage.c_str(), newClientMessage.length(), 0);
+                if (sendLen < 0)
+                {
+                    std::cerr << "Error sending message to client: " << client.second << std::endl;
+                }
+            }
+        }
+    }
 }
 
 int main()
@@ -140,7 +162,6 @@ int main()
 
     char buffer[BUFFER_SIZE];
     std::map<int, std::string> Clients;
-    std::map<int, struct sockaddr_in> ClientsAddress;
     std::mutex clientsMutex;
 
     // socket() -- create socket
@@ -183,10 +204,11 @@ int main()
             continue;
         }
 
-        std::thread clientThread(handleClient, clientSockfd, clientAddr, std::ref(Clients), std::ref(ClientsAddress), std::ref(clientsMutex));
+        std::thread clientThread(handleClient, clientSockfd, clientAddr, std::ref(Clients), std::ref(clientsMutex));
         clientThread.detach();
     }
 
 
     close(sockfd);
+    return 0;
 }
