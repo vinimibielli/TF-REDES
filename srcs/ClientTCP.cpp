@@ -157,6 +157,8 @@ int main()
             file.close();
             std::cout << "The file " << filename << " had been send with sucess" << std::endl;
 
+            sleep(1);
+
             sendLen = send(sockfd, FILE_COMPLETE, strlen(FILE_COMPLETE), 0); // send the notification to the server
             if (sendLen < 0)
             {
