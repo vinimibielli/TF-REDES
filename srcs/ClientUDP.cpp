@@ -193,7 +193,7 @@ int main()
             sendLen = sendto(sockfd, FILE_COMPLETE, strlen(FILE_COMPLETE), 0, (struct sockaddr *)&serverAddr, addrLen); // send the notification to the server
             if (sendLen < 0)
             {
-                std::cerr << "Error to notification the file is send" << std::endl;
+                std::cerr << "Error to notification the file is complete" << std::endl;
             }
 
             continue;
