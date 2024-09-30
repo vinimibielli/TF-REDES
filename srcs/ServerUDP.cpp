@@ -9,7 +9,7 @@
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
-#define MESSAGE_SERVER "Connected to the server. /file to send a file"
+#define MESSAGE_SERVER "Connected to the server || /FILE to send a file"
 #define FILE_NOTIFICATION "FILE-TRANSFER"
 #define FILE_COMPLETE "FILE-COMPLETE"
 

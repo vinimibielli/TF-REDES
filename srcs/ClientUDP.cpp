@@ -157,7 +157,7 @@ int main()
             std::getline(std::cin, messageUser);
         }
 
-        if (messageUser.rfind("/file", 0) == 0)
+        if (messageUser.rfind("/FILE", 0) == 0)
         {
 
             std::string filename = messageUser.substr(6);
