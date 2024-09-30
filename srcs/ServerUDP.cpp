@@ -37,6 +37,7 @@ int main()
     std::map<std::string, struct sockaddr_in> ClientsAddress;
     bool newclient = false;
     std::string newClientMessage;
+    bool fileTransfer = false;
 
     // socket() -- create socket
 
@@ -103,14 +104,22 @@ int main()
         }
         else
         {
-            if(buffer == FILE_NOTIFICATION){
+            if(strcmp(buffer, FILE_NOTIFICATION) == 0){
                 newClientMessage = FILE_NOTIFICATION;
+                fileTransfer = true;
+
             }
-            else if(buffer == FILE_COMPLETE){
+            else if(strcmp(buffer, FILE_COMPLETE) == 0){
                 newClientMessage = FILE_COMPLETE;
+                fileTransfer = false;
             }
             else{
+                if(fileTransfer){
+                    newClientMessage = buffer;
+                }
+                else{
                 newClientMessage = Clients[addressClient] + ": " + buffer;
+                }
             }
         }
 
