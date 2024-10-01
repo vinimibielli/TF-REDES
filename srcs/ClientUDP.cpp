@@ -9,8 +9,11 @@
 #include <thread>
 #include <fcntl.h>
 #include <fstream>
+#include <iomanip>
 
-#define PORT 8080
+
+
+#define PORT 20800
 #define BUFFER_SIZE 1024
 #define MESSAGE_SERVER "Hello from client."
 #define FILE_NOTIFICATION "FILE-TRANSFER"
@@ -21,6 +24,8 @@ void errorFunction(const std::string &message)
     std::cerr << message << std::endl;
     exit(EXIT_FAILURE);
 }
+
+//FUNÇÃO PARA RECEBER MENSAGEM A PARTIR DE UMA THREAD
 
 void receiveMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen)
 {
@@ -45,7 +50,7 @@ void receiveMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrL
         {
             buffer[recvLen] = '\0';
 
-            if (strcmp(buffer, FILE_NOTIFICATION) == 0)
+            if (strcmp(buffer, FILE_NOTIFICATION) == 0) //verifica se está vindo arquivo
             {
                 fileTransfer = true;
                 std::string filename = "received_file.txt";
@@ -55,7 +60,7 @@ void receiveMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrL
                 }
                 continue;
             }
-            else if (strcmp(buffer, FILE_COMPLETE) == 0)
+            else if (strcmp(buffer, FILE_COMPLETE) == 0) //verifica se terminou de enviar o arquivo
             {
                 fileTransfer = false;
                 std::cout << "You received the file with sucess" << std::endl;
@@ -65,7 +70,7 @@ void receiveMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrL
                 continue;
             }
 
-            if (fileTransfer)
+            if (fileTransfer) //arquivo está sendo enviado aqui
             {
                 if(!file.is_open()){
                     std::cerr << "Error opening the file" << std::endl;
@@ -100,15 +105,15 @@ int main()
         errorFunction("Error to create the socket");
     }
 
-    fcntl(sockfd, F_SETFL, O_NONBLOCK); // setting the socket to non-blocking mode
+    fcntl(sockfd, F_SETFL, O_NONBLOCK); // socket está sendo colocado no modo no-blocking
 
-    // set serverAddr
+    // configurando serverAddr
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORT);
 
-    // recvfrom() and sendto()
+    // inicialização da thread receiveMessage
     std::thread receiveThread(receiveMessage, sockfd, std::ref(serverAddr), std::ref(addrLen));
     receiveThread.detach();
 
@@ -153,8 +158,7 @@ int main()
         }
         else
         {
-            // std::cout << userIdentification << ": ";
-            std::getline(std::cin, messageUser);
+            std::getline(std::cin, messageUser); //toda a parte de envio de arquivo
         }
 
         if (messageUser.rfind("/FILE", 0) == 0)
@@ -175,6 +179,7 @@ int main()
             }
 
             char fileBuffer[BUFFER_SIZE];
+            auto start = std::chrono::high_resolution_clock::now();
             while (!file.eof())
             {
                 file.read(fileBuffer, BUFFER_SIZE);
@@ -188,7 +193,11 @@ int main()
             }
 
             file.close();
-            std::cout << "The file " << filename << " had been send with sucess" << std::endl;
+
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+            std::cout << "The file " << filename << " had been send with sucess in " << std::fixed << duration.count() << " nanoseconds." << std::endl;
 
             sendLen = sendto(sockfd, FILE_COMPLETE, strlen(FILE_COMPLETE), 0, (struct sockaddr *)&serverAddr, addrLen); // send the notification to the server
             if (sendLen < 0)
@@ -199,13 +208,20 @@ int main()
             continue;
         }
 
+        auto start = std::chrono::high_resolution_clock::now();
+
         int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&serverAddr, addrLen);
+
         if (sendLen < 0)
         {
             std::cerr << "Error sending message" << std::endl;
         }
-    }
-    
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+        std::cout << std::fixed << duration.count() << " nanossegundos." << std::endl;
+}
 
     close(sockfd);
 }

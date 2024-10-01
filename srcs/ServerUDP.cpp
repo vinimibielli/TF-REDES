@@ -7,17 +7,21 @@
 #include <cstring>
 #include <map>
 
-#define PORT 8080
+#define PORT 20800
 #define BUFFER_SIZE 1024
 #define MESSAGE_SERVER "Connected to the server || /FILE to send a file"
 #define FILE_NOTIFICATION "FILE-TRANSFER"
 #define FILE_COMPLETE "FILE-COMPLETE"
+
+//FUNÇÃO PARA EXIBIR ERRO
 
 void errorFunction(const std::string &message)
 {
     std::cerr << message << std::endl;
     exit(EXIT_FAILURE);
 }
+
+//FUNÇÃO PARA PEGAR O ENDEREÇO DO CLIENT
 
 std::string getAddressString(const struct sockaddr_in &address)
 {
@@ -39,7 +43,7 @@ int main()
     std::string newClientMessage;
     bool fileTransfer = false;
 
-    // socket() -- create socket
+    // CRIAÇÃO DO SOCKET
 
     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd < 0)
@@ -47,13 +51,13 @@ int main()
         errorFunction("Error to create the socket");
     }
 
-    // set serverAddr -- setting up the servers address structures
+    // CONFIGURANDO SERVERADDR
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;
     serverAddr.sin_port = htons(PORT);
 
-    // bind() -- binding the socket to the server address
+    // CONFIGURANDO O BIND DO SOCKET
 
     if (bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
     {
@@ -61,12 +65,12 @@ int main()
         errorFunction("Error to bind the socket");
     }
 
-    // recvfrom() and sendto() -- functions to receive and send messages
+    // recvfrom() and sendto() -- FUNÇÕES PARA O RECEBIMENTO E ENVIO DE MENSAGENS
 
     while (true)
     {
 
-        // recvfrom() -- receive messages
+        // recvfrom() -- ENVIO DE MENSAGENS
         int sendvLen;
         int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&clientAddr, &addrLen);
         if (recvLen < 0)
@@ -75,7 +79,7 @@ int main()
             continue;
         }
 
-        buffer[recvLen] = '\0'; // Null-terminate the received data
+        buffer[recvLen] = '\0';
 
         std::string addressClient = getAddressString(clientAddr);
 
@@ -96,7 +100,7 @@ int main()
             std::cout << "Received from client " << Clients[addressClient] << ": " << buffer << std::endl;
         }
 
-        //NEW CLIENT MESSAGE
+        //INFORMANDO QUE TEM NOVO CLIENT
 
         if (newclient){
             newclient = false;
@@ -125,7 +129,7 @@ int main()
 
 
 
-        // sendto() -- send messages
+        // sendto() -- ENVIANDO MENSAGENS
         if (Clients.size() > 1)
         {
             for (auto &client : Clients)

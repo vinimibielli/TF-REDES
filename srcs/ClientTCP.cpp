@@ -9,19 +9,26 @@
 #include <thread>
 #include <fcntl.h>
 #include <fstream>
+#include <iomanip>
+#include <chrono>
 
-#define PORT 8081
+
+#define PORT 20800
 #define BUFFER_SIZE 1024
 #define MESSAGE_SERVER "Hello from client."
 #define FILE_NOTIFICATION "FILE-TRANSFER"
 #define FILE_COMPLETE "FILE-COMPLETE"
 #define USERNAME_INFORMATION "Please inform your username: "
 
+//FUNÇÃO PARA INFORMAR ERRO
+
 void errorFunction(const std::string &message)
 {
     std::cerr << message << std::endl;
     exit(EXIT_FAILURE);
 }
+
+//FUNÇÃO COM THREAD PARA RECEBER MENSAGENS
 
 void receiveMessage(int sockfd)
 {
@@ -46,7 +53,7 @@ void receiveMessage(int sockfd)
         {
             buffer[recvLen] = '\0';
 
-            if (strcmp(buffer, FILE_NOTIFICATION) == 0)
+            if (strcmp(buffer, FILE_NOTIFICATION) == 0) //INFORMA QUE UM ARQUIVO SERÁ ENVIADO
             {
                 std::cout << "You will receive a file" << std::endl;    
                 fileTransfer = true;
@@ -57,7 +64,7 @@ void receiveMessage(int sockfd)
                 }
                 continue;
             }
-            else if (strcmp(buffer, FILE_COMPLETE) == 0)
+            else if (strcmp(buffer, FILE_COMPLETE) == 0) //INFORMA QUE O ARQUIVO FOI ENVIADO
             {
                 fileTransfer = false;
                 std::cout << "You received the file with sucess" << std::endl;
@@ -67,7 +74,7 @@ void receiveMessage(int sockfd)
                 continue;
             }
 
-            if (fileTransfer)
+            if (fileTransfer) //ARQUIVO SENDO ENVIADO
             {
                 std::cout << "Receiving file" << std::endl;
                 if(!file.is_open()){
@@ -93,7 +100,7 @@ int main()
     char buffer[BUFFER_SIZE];
     std::string messageUser;
 
-    // socket()
+    // CRIANDO O SOCKET
 
     sockfd = (socket(AF_INET, SOCK_STREAM, 0));
     if (sockfd < 0)
@@ -101,22 +108,24 @@ int main()
         errorFunction("Error to create the socket");
     }
 
-    // set serverAddr
+    // CONFIGURANDO O SERVERADDR
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORT);
 
-    // Connect to the server
+    // CONECTANDO NO SERVER
     if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
     {
         close(sockfd);
         errorFunction("Error to connect the socket");
     }
 
-    //Receive thread
+    //CRIANDO A THREAD DE receiveMessage
     std::thread receiveThread(receiveMessage, sockfd);
     receiveThread.detach();
+
+    //ENVIO DE MENSAGENS
 
     while (true)
     {
@@ -142,6 +151,7 @@ int main()
             }
 
             char fileBuffer[BUFFER_SIZE];
+            auto start = std::chrono::high_resolution_clock::now();
             while (!file.eof())
             {
                 file.read(fileBuffer, BUFFER_SIZE);
@@ -155,7 +165,12 @@ int main()
             }
 
             file.close();
-            std::cout << "The file " << filename << " had been send with sucess" << std::endl;
+
+            auto end = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+            
+            std::cout << "The file " << filename << " had been send with sucess in " << std::fixed << duration.count() << " nanossegundos." << std::endl;
+    
 
             sleep(1);
 
@@ -168,11 +183,18 @@ int main()
             continue;
         }
 
+        auto start = std::chrono::high_resolution_clock::now();
+
         sendLen = send(sockfd, messageUser.c_str(), messageUser.length(), 0);
         if (sendLen < 0)
+
         {
             std::cerr << "Error sending message" << std::endl;
         }
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+        std::cout << std::fixed << duration.count() << " nanossegundos." << std::endl;
     }
     
 
