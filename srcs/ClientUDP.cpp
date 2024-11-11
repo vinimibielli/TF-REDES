@@ -175,11 +175,6 @@ void clientUDP(){
 
     file.close();
 
-    std::thread sendIpListThread(sendIpList, sockfd, std::ref(serverAddr), std::ref(addrLen), std::ref(ipList));
-    sendIpListThread.detach();
-    std::thread printIpListThread(printIpList, std::ref(ipList));
-    printIpListThread.detach();
-
     // socket()
 
     sockfd = (socket(AF_INET, SOCK_DGRAM, 0));
@@ -196,13 +191,13 @@ void clientUDP(){
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORT);
 
-    // recvfrom() and sendto()
-    std::thread receiveThread(receiveMessage, sockfd, std::ref(serverAddr), std::ref(addrLen), std::ref(ipList));
-    receiveThread.detach();
+    //sendto()
 
     std::thread sendThread(sendMessage, sockfd, std::ref(serverAddr), std::ref(addrLen), std::ref(messageUser));
     sendThread.detach();
-    
+
+    std::thread printIpListThread(printIpList, std::ref(ipList));
+    printIpListThread.detach();
 
     close(sockfd);
 }
@@ -236,11 +231,10 @@ void serverUDP(){
     receiveThread.detach();
 
     // Periodically send IP list
-    while (true)
-    {
-        sendIpList(sockfd, clientAddr, addrLen, ipList);
-    }
-
+    
+    std::thread sendIpListThread(sendIpList, sockfd, clientAddr, addrLen, ipList);
+    sendIpListThread.detach();
+    
     close(sockfd);
 }
 
