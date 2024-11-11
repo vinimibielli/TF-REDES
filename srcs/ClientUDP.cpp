@@ -141,10 +141,18 @@ void errorFunction(const std::string &message)
 
      }
 
-     int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&serverAddr, addrLen);
-     if (sendLen < 0)
+     if(ipList.size() > 0)
      {
-         std::cerr << "Error sending the ip list" << std::endl;
+        for(int i = 0; i < ipList.size(); i++)
+        {
+            serverAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+            int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&serverAddr, addrLen);
+            if (sendLen < 0)
+            {
+                std::cerr << "Error sending the ip list" << std::endl;
+            }
+        }
+        
      }
 
      std::this_thread::sleep_for(std::chrono::seconds(15));
@@ -201,7 +209,6 @@ void clientUDP(){
     //std::set serverAddr;
 
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
     serverAddr.sin_port = htons(PORT);
 
     //sendto();
