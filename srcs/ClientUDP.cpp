@@ -13,6 +13,8 @@
 #include <set>
 #include <utility>
 #include <functional>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
 #define PORT 9000
 #define BUFFER_SIZE 1024
@@ -20,8 +22,9 @@
 #define ROUTER_LIST_PREFIX "ROUTER_LIST:"
 #define MSG_PREFIX "MSG:"
 
-  std::vector<std::pair<std::string, std::pair<std::string, int>>> ipList;
-  std::vector<std::pair<std::string, int>> vizinhos;
+std::vector<std::pair<std::string, std::pair<std::string, int>>> ipList;
+std::vector<std::pair<std::string, int>> vizinhos;
+std::string localIp;
 
 
 void errorFunction(const std::string &message)
@@ -31,12 +34,14 @@ void errorFunction(const std::string &message)
 }
 
 
- void receiveMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen)
+ void receiveMessage(int sockfd)
  {
-     char buffer[BUFFER_SIZE];
-     while (true)
+    char buffer[BUFFER_SIZE];
+    struct sockaddr_in receiveAddr;
+    socklen_t addrLen = sizeof(receiveAddr);
+    while (true)
      {
-         int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&serverAddr, &addrLen);
+         int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&receiveAddr, &addrLen);
          if (recvLen < 0)
          {
              if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -57,7 +62,7 @@ void errorFunction(const std::string &message)
                  {
                      std::string routerList = message.substr(strlen(ROUTER_LIST_PREFIX));
                      std::string delimiter = ";";
-                     std::string ipReceive = std::string(inet_ntoa(serverAddr.sin_addr));
+                     std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
                     
                      while(routerList.size() > 0)
                      {
@@ -89,7 +94,7 @@ void errorFunction(const std::string &message)
                                      if(metric < ipList[i].second.second)
                                      {
                                          ipList[i].second.first = metric;
-                                         ipList[i].first = std::string(inet_ntoa(serverAddr.sin_addr));
+                                         ipList[i].first = std::string(inet_ntoa(receiveAddr.sin_addr));
                                          std::cout << "Metric updated: " << ip << std::endl;
                                      }
                                     
@@ -118,44 +123,51 @@ void errorFunction(const std::string &message)
      }
  }
 
- void sendMessage(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen, std::string &message)
+ void sendMessage(int sockfd, struct sockaddr_in &routerAddr, socklen_t &addrLen, std::string &message)
  {
      while(true)
      {
          getline(std::cin, message);
-         int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&serverAddr, addrLen);
-         if (sendLen < 0)
+         for(int i = 0; i < ipList.size(); i++)
          {
-             std::cerr << "Error sending message" << std::endl;
+             routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+             int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+             if (sendLen < 0)
+             {
+                 std::cerr << "Error sending message" << std::endl;
+             }
          }
          std::this_thread::sleep_for(std::chrono::milliseconds(100));
      }
  }
 
- void sendIpList(int sockfd, struct sockaddr_in &serverAddr, socklen_t &addrLen)
+ void sendIpList(int sockfd)
  {
-     std::string message = ROUTER_LIST_PREFIX;
-     for (int i = 0; i < ipList.size(); i++)
-     {
-        message += ipList[i].second.first + "-" + std::to_string(ipList[i].second.second) + ";";
+    struct sockaddr_in routerAddr;
+    socklen_t addrLen = sizeof(routerAddr);
+    std::string message = ROUTER_LIST_PREFIX;
 
-     }
+    for (int i = 0; i < ipList.size(); i++)
+    {
+       message += ipList[i].second.first + "-" + std::to_string(ipList[i].second.second) + ";";
 
-     if(ipList.size() > 0)
-     {
-        for(int i = 0; i < ipList.size(); i++)
-        {
-            serverAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
-            int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&serverAddr, addrLen);
-            if (sendLen < 0)
-            {
-                std::cerr << "Error sending the ip list" << std::endl;
-            }
-        }
-        
-     }
+    }
 
-     std::this_thread::sleep_for(std::chrono::seconds(15));
+    if(ipList.size() > 0)
+    {
+       for(int i = 0; i < ipList.size(); i++)
+       {
+           routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+           int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+           if (sendLen < 0)
+           {
+               std::cerr << "Error sending the ip list" << std::endl;
+           }
+       }
+       
+    }
+
+    std::this_thread::sleep_for(std::chrono::seconds(15));
      
  }
 
@@ -163,13 +175,14 @@ void errorFunction(const std::string &message)
  {
      for (int i = 0; i < ipList.size(); i++)
      {
-         std::cout << ipList[i].first << " - " << ipList[i].second.first << " - " << ipList[i].second.second << std::endl;
+         std::cout << ipList[i].second.first << "-" << ipList[i].second.second << std::endl;
      }
 
      std::this_thread::sleep_for(std::chrono::seconds(25));
  }
 
  void countDisconnect(){
+    while(true){
         for(int i = 0; i < vizinhos.size(); i++)
         {
             if(vizinhos[i].second == 0)
@@ -183,18 +196,48 @@ void errorFunction(const std::string &message)
                 vizinhos[i].second--;
             }
         }
+    }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
  }
 
-void clientUDP(){
+ std::string getInterfaceIpAddress(const std::string& interfaceName) {
+    int fd;
+    struct ifreq ifr;
+
+    // Create a socket
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1) {
+        perror("socket");
+        exit(1);
+    }
+
+    // Specify the interface name
+    ifr.ifr_addr.sa_family = AF_INET;
+    strncpy(ifr.ifr_name, interfaceName.c_str(), IFNAMSIZ-1);
+
+    // Get the IP address
+    if (ioctl(fd, SIOCGIFADDR, &ifr) == -1) {
+        perror("ioctl");
+        close(fd);
+        exit(1);
+    }
+
+    close(fd);
+
+    // Convert the IP address to a string
+    return inet_ntoa(((struct sockaddr_in*)&ifr.ifr_addr)->sin_addr);
+}
+
+int main(){
 
     int sockfd;
     char buffer[BUFFER_SIZE];
-    struct sockaddr_in serverAddr;
-    struct sockaddr_in clientAddr;
-    socklen_t addrLen = sizeof(serverAddr);
-    std::string userIdentification = " ";
+    struct sockaddr_in routerAddr;
+    socklen_t addrLen = sizeof(routerAddr);
     std::string messageUser;
-    int sendLen;
+    std::string interfaceName = "wlp4s0";
+    localIp = getInterfaceIpAddress(interfaceName);
+    std::cout << "IP Address of " << interfaceName << ": " << localIp << std::endl;
 
     //socket();
 
@@ -204,66 +247,11 @@ void clientUDP(){
         errorFunction("Error to create the socket");
     }
 
-    fcntl(sockfd, F_SETFL, O_NONBLOCK);  //setting the socket to non-blocking mode
+    //routerAddr();
+    routerAddr.sin_family = AF_INET;
+    routerAddr.sin_port = htons(PORT);
+    routerAddr.sin_addr.s_addr = INADDR_ANY;
 
-    //std::set serverAddr;
-
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(PORT);
-
-    //sendto();
-
-    std::thread sendThread(sendMessage, sockfd, std::ref(serverAddr), std::ref(addrLen), std::ref(messageUser));
-    sendThread.detach();
-
-    std::thread printIpListThread(printIpList);
-    printIpListThread.detach();
-
-    std::thread countDisconnectThread(countDisconnect);
-    countDisconnectThread.detach();
-
-    close(sockfd);
-}
-
-void serverUDP(){
-    int sockfd;
-    struct sockaddr_in serverAddr, clientAddr;
-    socklen_t addrLen = sizeof(clientAddr);
-
-    // Create socket
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd < 0)
-    {
-        errorFunction("Error creating socket");
-    }
-
-    // Set server address
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(PORT);
-
-    // Bind socket
-    if (bind(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0)
-    {
-        errorFunction("Error binding socket");
-    }
-
-    // Start receiving messages
-    std::thread receiveThread(receiveMessage, sockfd, std::ref(clientAddr), std::ref(addrLen));
-    receiveThread.detach();
-
-    // Periodically send IP list
-    
-    std::thread sendIpListThread(sendIpList, sockfd, std::ref(clientAddr), std::ref(addrLen));
-    sendIpListThread.detach();
-    
-    close(sockfd);
-}
-
-int main(){
-
-
-    std::vector<std::string> result;
     std::ifstream file("roteadores.txt");
 
     if (!file.is_open()) {
@@ -274,16 +262,44 @@ int main(){
     while (std::getline(file, line)) {
         ipList.push_back(std::make_pair(line, std::make_pair(line, 1)));
         vizinhos.push_back(std::make_pair(line, 35));
+        std::string msg = '*' + localIp;
+        if (inet_pton(AF_INET, line.c_str(), &routerAddr.sin_addr) <= 0) {
+            errorFunction("Invalid address/ Address not supported"); 
+        }
+        int sendLen = sendto(sockfd, msg.c_str(), msg.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
     }
 
     file.close();
 
-    std::thread serverThread(serverUDP);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    std::thread clientThread(clientUDP);
+    std::thread printIpListThread(printIpList);
+    printIpListThread.detach();
 
-    serverThread.join();
-    clientThread.join();
+    std::thread countDisconnectThread(countDisconnect);
+    countDisconnectThread.detach();
+
+    // Start receiving messages
+    std::thread receiveThread(receiveMessage, sockfd);
+    receiveThread.detach();
+
+    // Periodically send IP list
+    
+    std::thread sendIpListThread(sendIpList, sockfd);
+    sendIpListThread.detach();
+
+    while(true)
+     {
+         getline(std::cin, messageUser);
+         for(int i = 0; i < ipList.size(); i++)
+         {
+             routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+             int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+             if (sendLen < 0)
+             {
+                 std::cerr << "Error sending message" << std::endl;
+             }
+         }
+         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+     }
 
     return 0;
 }
