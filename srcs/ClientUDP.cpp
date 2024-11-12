@@ -260,6 +260,7 @@ int main(){
 
     std::string line;
     while (std::getline(file, line)) {
+        std::cout << "Adding router: " << line << std::endl;
         ipList.push_back(std::make_pair(line, std::make_pair(line, 1)));
         vizinhos.push_back(std::make_pair(line, 35));
         std::string msg = '*' + localIp;
@@ -274,8 +275,8 @@ int main(){
     std::thread printIpListThread(printIpList);
     printIpListThread.detach();
 
-    std::thread countDisconnectThread(countDisconnect);
-    countDisconnectThread.detach();
+    //std::thread countDisconnectThread(countDisconnect);
+    //countDisconnectThread.detach();
 
     // Start receiving messages
     std::thread receiveThread(receiveMessage, sockfd);
@@ -288,9 +289,12 @@ int main(){
 
     while(true)
      {
+        //std::cout << "Digite a mensagem: ";
          getline(std::cin, messageUser);
+         std::cout << "IpList size: " << ipList.size() << std::endl;
          for(int i = 0; i < ipList.size(); i++)
          {
+            std::cout << "Enviando para: " << ipList[i].first << std::endl;
              routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
              int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
              if (sendLen < 0)
