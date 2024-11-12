@@ -36,9 +36,13 @@ void receiveMessage(int sockfd)
 {
     char buffer[BUFFER_SIZE];
     struct sockaddr_in receiveAddr;
+    receiveAddr.sin_family = AF_INET;
+    receiveAddr.sin_port = htons(PORT);
+
     socklen_t addrLen = sizeof(receiveAddr);
     while (true)
     {
+        std::cout << "Aaaaaaaaaaaaaaaaaaaa" << std::endl;
         int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&receiveAddr, &addrLen);
         if (recvLen < 0)
         {
@@ -141,13 +145,12 @@ void sendIpList(int sockfd)
 
     struct sockaddr_in routerAddr;
     socklen_t addrLen = sizeof(routerAddr);
-    std::string message = ROUTER_LIST_PREFIX;
     routerAddr.sin_family = AF_INET;
     routerAddr.sin_port = htons(PORT);
 
     while (true)
     {
-
+        std::string message = ROUTER_LIST_PREFIX;
         for (int i = 0; i < ipList.size(); i++)
         {
             message += ipList[i].second.first + "-" + std::to_string(ipList[i].second.second) + ";";
@@ -272,8 +275,10 @@ int main(int argc, char *argv[])
     while (true)
     {
         // std::cout << "Digite a mensagem: ";
+        std::string messageSend = MSG_PREFIX;
         getline(std::cin, messageUser);
-        std::cout << "IpList size: " << ipList.size() << std::endl;
+        messageSend += ' ' + messageUser;
+        std::cout << "Message to the other user: " << messageSend << std::endl;
         for (int i = 0; i < ipList.size(); i++)
         {
             std::cout << "Enviando para: " << ipList[i].first << std::endl;
