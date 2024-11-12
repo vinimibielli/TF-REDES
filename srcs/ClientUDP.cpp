@@ -38,11 +38,16 @@ void receiveMessage(int sockfd)
     struct sockaddr_in receiveAddr;
     receiveAddr.sin_family = AF_INET;
     receiveAddr.sin_port = htons(PORT);
-
+    receiveAddr.sin_addr.s_addr = INADDR_ANY;
     socklen_t addrLen = sizeof(receiveAddr);
+     if (bind(sockfd, (struct sockaddr *)&receiveAddr, sizeof(receiveAddr)) < 0)
+    {
+        close(sockfd);
+        errorFunction("Error to bind the socket");
+    }
+
     while (true)
     {
-        std::cout << "Aaaaaaaaaaaaaaaaaaaa" << std::endl;
         int recvLen = recvfrom(sockfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&receiveAddr, &addrLen);
         if (recvLen < 0)
         {
@@ -161,6 +166,7 @@ void sendIpList(int sockfd)
             for (int i = 0; i < ipList.size(); i++)
             {
                 routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+                std::cout << "IpList foi enviada para o ip: " << ipList[i].first << std::endl;
                 int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
                 if (sendLen < 0)
                 {
