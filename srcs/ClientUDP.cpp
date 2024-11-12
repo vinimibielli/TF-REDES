@@ -40,11 +40,6 @@ void receiveMessage(int sockfd)
     receiveAddr.sin_port = htons(PORT);
     receiveAddr.sin_addr.s_addr = INADDR_ANY;
     socklen_t addrLen = sizeof(receiveAddr);
-     if (bind(sockfd, (struct sockaddr *)&receiveAddr, sizeof(receiveAddr)) < 0)
-    {
-        close(sockfd);
-        errorFunction("Error to bind the socket");
-    }
 
     while (true)
     {
@@ -242,6 +237,12 @@ int main(int argc, char *argv[])
     routerAddr.sin_family = AF_INET;
     routerAddr.sin_port = htons(PORT);
     routerAddr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(sockfd, (struct sockaddr *)&routerAddr, sizeof(routerAddr)) < 0)
+    {
+        close(sockfd);
+        errorFunction("Error to bind the socket");
+    }
 
     std::ifstream file("roteadores.txt");
 
