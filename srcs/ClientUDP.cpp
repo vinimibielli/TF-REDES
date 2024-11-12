@@ -90,9 +90,10 @@ void receiveMessage(int sockfd)
                                 vizinhos[i].second = 35;
                             }
 
-                            if (ipList[i].second.first == ip)
+                            if (ipList[i].second.first == ip || ip == localIp)
                             {
                                 found = true;
+                                std::cout << "encontrou ip ou localIP" << std::endl;
                                 if (metric < ipList[i].second.second)
                                 {
                                     ipList[i].second.first = metric;
@@ -281,6 +282,7 @@ int main(int argc, char *argv[])
 
     while (true)
     {
+        std::cout << "IpList size: " << ipList.size() << std::endl;
         // std::cout << "Digite a mensagem: ";
         std::string messageSend = MSG_PREFIX;
         getline(std::cin, messageUser);
