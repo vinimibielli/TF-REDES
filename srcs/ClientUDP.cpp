@@ -140,11 +140,8 @@ void receiveMessage(int sockfd)
 
                     if (!found) {
                         if(ip != localIp) {
-                            // JA TA FAZENDO ESSE COMANDO NO FINAL, NAO PRECISA FAZER AQUI
-                            // routerList.erase(0, posIP + delimiter.length());
                             ipList.push_back(std::make_pair(ipReceive, std::make_pair(ip, (metric + 1))));
                             std::cout << "New router added: " << ip << std::endl;
-                            // found = false; // precisa declarar isso como false? o bgl ja n vai ser mais usado msm
                         }
                     }
 
@@ -180,7 +177,6 @@ void receiveMessage(int sockfd)
                 if(!exists) {
                     ipList.push_back(std::make_pair(ipVizinho, std::make_pair(ipVizinho, 1)));
                     vizinhos.push_back(std::make_pair(ipVizinho, 35));
-                    exists = false;
                 }
             }
         }
