@@ -85,7 +85,7 @@ void receiveMessage(int sockfd)
             if (message[0] == '@')
             {   
                 //std::cout << "ENTROU NO @" << std::endl;
-                std::cout << message << std::endl;
+                //std::cout << message << std::endl;
                 std::string routerList = message.substr(1); // remove 1st char
                 std::string delimiter = "@";
                 std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
@@ -172,7 +172,7 @@ void receiveMessage(int sockfd)
                 }
             }
             else if (message[0] == '*') {
-                //std::cout << "ENTROU NO *" << std::endl;
+                std::cout << "ENTROU NO *" << std::endl;
                 // novo roteador se conectou, vizinho novo, tem q adicionar na lista com metrica 0, olha no enunciado do trabalho
                 bool exists = false;
                 std::string ipVizinho = message.substr(1);
@@ -207,6 +207,7 @@ void sendIpList(int sockfd)
 
     while (true)
     {
+        std::this_thread::sleep_for(std::chrono::seconds(15));
         std::string message = "";
         for (int i = 0; i < ipList.size(); i++)
         {
@@ -226,8 +227,6 @@ void sendIpList(int sockfd)
                 }
             }
         }
-
-        std::this_thread::sleep_for(std::chrono::seconds(15));
     }
 }
 
@@ -307,6 +306,7 @@ int main(int argc, char *argv[]) {
         std::string msg = '*' + localIp;
         routerAddr.sin_addr.s_addr = inet_addr(line.c_str());
         int sendLen = sendto(sockfd, msg.c_str(), msg.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+        std::cout << msg << std::endl;
     }
 
     file.close();
@@ -334,8 +334,8 @@ int main(int argc, char *argv[]) {
         messageSend += messageUser;
         std::string messageAux = messageUser;
         messageAux = messageAux.substr(0, messageAux.find(";"));
-        std::cout << messageAux << std::endl;
-        std::cout << "Message to the other user: " << messageSend << std::endl;
+        //std::cout << messageAux << std::endl;
+        //std::cout << "Message to the other user: " << messageSend << std::endl;
         for (int i = 0; i < ipList.size(); i++)
         {
             if(ipList[i].second.first == messageAux){
