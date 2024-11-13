@@ -152,15 +152,18 @@ void receiveMessage(int sockfd)
             }
             else if (message[0] == '!')
             {
+                std::cout << "ENTROU AQUI ESSA MERDA" << std::endl;
                 std::string messageDelimiter = ";";
                 std::string userMessage = message;
-                if(userMessage.find(localIp) == std::string::npos) {
-                    std::cout << "Repassei a mensagem: " << userMessage << std::endl;
-                    std::string routerOrigem = userMessage.substr(0, userMessage.find(messageDelimiter));
-                    std::string routerDestino = userMessage.substr(0, userMessage.find(messageDelimiter));
-                    sendMessage(sockfd, routerDestino, userMessage);
-                } else {
-                    std::cout << userMessage << std::endl;
+                std::string routerOrigem = userMessage.substr(0, userMessage.find(messageDelimiter));
+                std::string routerDestino = userMessage.substr(0, userMessage.find(messageDelimiter));
+                std::cout << "routerOrigem: " << routerOrigem << std::endl;
+                std::cout << "routerDestino: " << routerDestino << std::endl;
+                
+                if(routerDestino == localIp){
+                    sendMessage(sockfd, routerDestino, message);
+                } else{
+                std::cout << userMessage << std::endl;
                 }
             }
             else if (message[0] == '*') {
@@ -320,18 +323,23 @@ int main(int argc, char *argv[]) {
     {
         //std::cout << "Iplist size: " << ipList.size()<< std::endl;
         // std::cout << "Digite a mensagem: ";
-        std::string messageSend = "!";
+        std::string messageSend = "!" + localIp + ";";
         getline(std::cin, messageUser);
         messageSend += messageUser;
+        std::string messageAux = messageUser;
+        messageAux = messageAux.substr(0, messageAux.find(";"));
+        std::cout << messageAux << std::endl;
         std::cout << "Message to the other user: " << messageSend << std::endl;
         for (int i = 0; i < ipList.size(); i++)
         {
-            std::cout << "Enviando para: " << ipList[i].first << std::endl;
-            routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
-            int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
-            if (sendLen < 0)
-                std::cerr << "Error sending message" << std::endl;
-            
+            if(ipList[i].second.first == messageAux){
+                std::cout << "Enviando para: " << ipList[i].first << std::endl;
+                routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+                int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+                if (sendLen < 0){
+                    std::cerr << "Error sending message" << std::endl;
+                }
+            }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
