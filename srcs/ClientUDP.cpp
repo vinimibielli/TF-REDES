@@ -61,7 +61,8 @@ void receiveMessage(int sockfd)
 
             std::string message(buffer);
             if (message.rfind(ROUTER_LIST_PREFIX, 0) == 0)
-            {
+            {   
+                std::cout << "PREFIX: IP LIST" << std::endl;
                 std::string routerList = message.substr(strlen(ROUTER_LIST_PREFIX));
                 std::string delimiter = ";";
                 std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
@@ -90,10 +91,10 @@ void receiveMessage(int sockfd)
                                 vizinhos[i].second = 35;
                             }
 
-                            if (ipList[i].second.first == ip || ip == localIp)
+                            if (ipList[i].second.first == ip)
                             {
                                 found = true;
-                                std::cout << "encontrou ip ou localIP" << std::endl;
+                                std::cout << "encontrou igual ou o localIP" << std::endl;
                                 if (metric < ipList[i].second.second)
                                 {
                                     ipList[i].second.first = metric;
@@ -106,14 +107,21 @@ void receiveMessage(int sockfd)
 
                     if (!found)
                     {
-
+                        if(ip == localIp){
+                            found = false;
+                            continue;
+                        } else{
                         routerList.erase(0, posIP + delimiter.length());
+                        ipList.push_back(std::make_pair(ipReceive, std::make_pair(ip, (metric + 1))));
                         std::cout << "New router added: " << ip << std::endl;
+                        found = false;
+                        }
                     }
                 }
             }
             else if (message.rfind(MSG_PREFIX, 0) == 0)
             {
+                std::cout << "PREFIX: MSG" << std::endl;
                 std::string userMessage = message.substr(strlen(MSG_PREFIX));
                 std::cout << userMessage << std::endl;
             }
@@ -282,7 +290,7 @@ int main(int argc, char *argv[])
 
     while (true)
     {
-        std::cout << "IpList size: " << ipList.size() << std::endl;
+        std::cout << "Iplist size:" << ipList.size()<< std::endl;
         // std::cout << "Digite a mensagem: ";
         std::string messageSend = MSG_PREFIX;
         getline(std::cin, messageUser);
