@@ -84,7 +84,7 @@ void receiveMessage(int sockfd)
             //std::cout << "mensagem recebida foi: " << message << std::endl;
             if (message[0] == '@')
             {   
-                std::cout << "ENTROU NO @" << std::endl;
+                //std::cout << "ENTROU NO @" << std::endl;
                 std::cout << message << std::endl;
                 std::string routerList = message.substr(1); // remove 1st char
                 std::string delimiter = "@";
@@ -127,12 +127,12 @@ void receiveMessage(int sockfd)
                             if (ipList[i].second.first == ip)
                             {
                                 found = true;
-                                std::cout << "encontrou igual ou o localIP" << std::endl;
+                                //std::cout << "encontrou igual ou o localIP" << std::endl;
                                 if ((metric + 1) < ipList[i].second.second)
                                 {
                                     ipList[i].second.first = metric;
                                     ipList[i].first = std::string(inet_ntoa(receiveAddr.sin_addr));
-                                    std::cout << "Metric updated: " << ip << std::endl;
+                                    //std::cout << "Metric updated: " << ip << std::endl;
                                 }
                             }
                         }
@@ -152,7 +152,7 @@ void receiveMessage(int sockfd)
             }
             else if (message[0] == '!')
             {
-                std::cout << "ENTROU NO !" << std::endl;
+                //std::cout << "ENTROU NO !" << std::endl;
                 std::string messageDelimiter = ";";
                 std::string userMessage = message;
 
@@ -162,18 +162,17 @@ void receiveMessage(int sockfd)
                 std::string routerDestino = userMessage.substr(userMessage.find(messageDelimiter) + 1, userMessage.size());
                 routerDestino = routerDestino.substr(0, routerDestino.find(messageDelimiter));
 
-                std::cout << "routerOrigem:" << routerOrigem << std::endl;
-                std::cout << "routerDestino:" << routerDestino << std::endl;
+                //std::cout << "routerOrigem:" << routerOrigem << std::endl;
+                //std::cout << "routerDestino:" << routerDestino << std::endl;
                 
                 if(routerDestino != localIp){
                     sendMessage(sockfd, routerDestino, message);
                 } else{
-                    std::cout << "é meu chapa é igual essa merda de ip" << std::endl;
                     std::cout << userMessage << std::endl;
                 }
             }
             else if (message[0] == '*') {
-                std::cout << "ENTROU NO *" << std::endl;
+                //std::cout << "ENTROU NO *" << std::endl;
                 // novo roteador se conectou, vizinho novo, tem q adicionar na lista com metrica 0, olha no enunciado do trabalho
                 bool exists = false;
                 std::string ipVizinho = message.substr(1);
@@ -181,8 +180,9 @@ void receiveMessage(int sockfd)
                 for(int i = 0; i < ipList.size(); i++) {
                     std::cout << ipList.size() << std::endl;
                     if(ipList[i].second.first == ipVizinho) {
-                        std::cout << "exist" << std::endl;
                         exists = true;
+                        ipList[i].first = ipVizinho;
+                        ipList[i].second.second = 1;
                         break;
                     }
                 }
@@ -253,9 +253,9 @@ void countDisconnect() {
     while (true) {
         for (int i = 0; i < vizinhos.size(); i++) {
             if (vizinhos[i].second == 0) {
+                std::cout << "Router " << vizinhos[i].first << " disconnected" << std::endl;
                 ipList.erase(ipList.begin() + i);
                 vizinhos.erase(vizinhos.begin() + i);
-                std::cout << "Router " << vizinhos[i].first << " disconnected" << std::endl;
             }
             else if (vizinhos[i].second > 0)
                 vizinhos[i].second--;
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     else {
-        std::cout << "Arquivo de configuracao lido";
+        std::cout << "Arquivo de configuracao lido - ";
     }
 
     std::string line;
