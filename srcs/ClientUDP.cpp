@@ -81,10 +81,10 @@ void receiveMessage(int sockfd)
             buffer[recvLen] = '\0';
 
             std::string message(buffer);
-            std::cout << "MENSAGEM RECEBIDA: " << message << "\n";
+            std::cout << "mensagem recebida foi: " << message << std::endl;
             if (message[0] == '@')
             {   
-                std::cout << "RECEBEMOS UMA TABELA PORRAA!!!!!!!!" << std::endl;
+                std::cout << "Tabela recebida" << std::endl;
                 // continue;
                 std::string routerList = message.substr(1); // remove 1st char
                 std::string delimiter = "@";
@@ -109,7 +109,7 @@ void receiveMessage(int sockfd)
                     int metric = std::stoi(router.substr(posMetric + 1));
 
                     // teste printando eles
-                    std::cout << "router:" << router << " -> " << ip << "-" << metric << "\n";
+                    //std::cout << "router:" << router << " -> " << ip << "-" << metric << "\n";
 
 
                     // verificando se o ip já está na lista e caso não esteja, adicionando na lista e com a métrica maior
@@ -160,14 +160,13 @@ void receiveMessage(int sockfd)
                     std::string routerDestino = userMessage.substr(0, userMessage.find(messageDelimiter));
                     sendMessage(sockfd, routerDestino, userMessage);
                 } else {
-                    std::cout << "Mensagem recebida: " << userMessage << std::endl;
+                    std::cout << userMessage << std::endl;
                 }
             }
             else if (message[0] == '*') {
                 // novo roteador se conectou, vizinho novo, tem q adicionar na lista com metrica 0, olha no enunciado do trabalho
                 bool exists = false;
                 std::string ipVizinho = message.substr(1);
-                std::cout << "New router connected: " << ipVizinho << std::endl;
                 for(int i = 0; i < ipList.size(); i++) {
                     if(ipList[i].second.first == ipVizinho) {
                         exists = true;
@@ -175,6 +174,7 @@ void receiveMessage(int sockfd)
                     }
                 }
                 if(!exists) {
+                    std::cout << "New router connected: " << ipVizinho << std::endl;
                     ipList.push_back(std::make_pair(ipVizinho, std::make_pair(ipVizinho, 1)));
                     vizinhos.push_back(std::make_pair(ipVizinho, 35));
                 }
@@ -205,7 +205,7 @@ void sendIpList(int sockfd)
             for (int i = 0; i < ipList.size(); i++)
             {
                 routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
-                std::cout << "IpList foi enviada para o ip: " << ipList[i].first << std::endl;
+                //std::cout << "IpList foi enviada para o ip: " << ipList[i].first << std::endl;
                 int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
                 if (sendLen < 0)
                 {
@@ -314,11 +314,11 @@ int main(int argc, char *argv[]) {
 
     while (true)
     {
-        std::cout << "Iplist size: " << ipList.size()<< std::endl;
+        //std::cout << "Iplist size: " << ipList.size()<< std::endl;
         // std::cout << "Digite a mensagem: ";
         std::string messageSend = "!";
         getline(std::cin, messageUser);
-        messageSend += ' ' + messageUser;
+        messageSend += messageUser;
         std::cout << "Message to the other user: " << messageSend << std::endl;
         for (int i = 0; i < ipList.size(); i++)
         {
