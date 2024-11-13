@@ -164,16 +164,20 @@ void receiveMessage(int sockfd)
                 }
             }
             else if (message[0] == '*') {
+                std::cout << "entrou no *" << std::endl;
                 // novo roteador se conectou, vizinho novo, tem q adicionar na lista com metrica 0, olha no enunciado do trabalho
                 bool exists = false;
                 std::string ipVizinho = message.substr(1);
+                std::cout << ipVizinho << std::endl;
                 for(int i = 0; i < ipList.size(); i++) {
+                    std::cout << ipList.size() << std::endl;
                     if(ipList[i].second.first == ipVizinho) {
+                        std::cout << "exist" << std::endl;
                         exists = true;
                         break;
                     }
                 }
-                if(!exists) {
+                if(exists == false) {
                     std::cout << "New router connected: " << ipVizinho << std::endl;
                     ipList.push_back(std::make_pair(ipVizinho, std::make_pair(ipVizinho, 1)));
                     vizinhos.push_back(std::make_pair(ipVizinho, 35));
