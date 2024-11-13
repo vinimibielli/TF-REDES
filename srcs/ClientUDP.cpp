@@ -85,6 +85,7 @@ void receiveMessage(int sockfd)
             if (message[0] == '@')
             {   
                 std::cout << "ENTROU NO @" << std::endl;
+                std::cout << message << std::endl;
                 std::string routerList = message.substr(1); // remove 1st char
                 std::string delimiter = "@";
                 std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
@@ -127,7 +128,7 @@ void receiveMessage(int sockfd)
                             {
                                 found = true;
                                 std::cout << "encontrou igual ou o localIP" << std::endl;
-                                if (metric < ipList[i].second.second)
+                                if ((metric + 1) < ipList[i].second.second)
                                 {
                                     ipList[i].second.first = metric;
                                     ipList[i].first = std::string(inet_ntoa(receiveAddr.sin_addr));
@@ -160,7 +161,7 @@ void receiveMessage(int sockfd)
 
                 std::string routerDestino = userMessage.substr(userMessage.find(messageDelimiter) + 1, userMessage.size());
                 routerDestino = routerDestino.substr(0, routerDestino.find(messageDelimiter));
-                
+
                 std::cout << "routerOrigem:" << routerOrigem << std::endl;
                 std::cout << "routerDestino:" << routerDestino << std::endl;
                 
