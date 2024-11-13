@@ -81,11 +81,10 @@ void receiveMessage(int sockfd)
             buffer[recvLen] = '\0';
 
             std::string message(buffer);
-            std::cout << "mensagem recebida foi: " << message << std::endl;
+            //std::cout << "mensagem recebida foi: " << message << std::endl;
             if (message[0] == '@')
             {   
-                std::cout << "Tabela recebida" << std::endl;
-                // continue;
+                std::cout << "ENTROU NO @" << std::endl;
                 std::string routerList = message.substr(1); // remove 1st char
                 std::string delimiter = "@";
                 std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
@@ -152,22 +151,28 @@ void receiveMessage(int sockfd)
             }
             else if (message[0] == '!')
             {
-                std::cout << "ENTROU AQUI ESSA MERDA" << std::endl;
+                std::cout << "ENTROU NO !" << std::endl;
                 std::string messageDelimiter = ";";
                 std::string userMessage = message;
+
                 std::string routerOrigem = userMessage.substr(0, userMessage.find(messageDelimiter));
-                std::string routerDestino = userMessage.substr(0, userMessage.find(messageDelimiter));
-                std::cout << "routerOrigem: " << routerOrigem << std::endl;
-                std::cout << "routerDestino: " << routerDestino << std::endl;
+                routerOrigem = routerOrigem.substr(1);
+
+                std::string routerDestino = userMessage.substr(userMessage.find(messageDelimiter) + 1, userMessage.size());
+                routerDestino = routerDestino.substr(0, routerDestino.find(messageDelimiter));
                 
-                if(routerDestino == localIp){
+                std::cout << "routerOrigem:" << routerOrigem << std::endl;
+                std::cout << "routerDestino:" << routerDestino << std::endl;
+                
+                if(routerDestino != localIp){
                     sendMessage(sockfd, routerDestino, message);
                 } else{
-                std::cout << userMessage << std::endl;
+                    std::cout << "é meu chapa é igual essa merda de ip" << std::endl;
+                    std::cout << userMessage << std::endl;
                 }
             }
             else if (message[0] == '*') {
-                std::cout << "entrou no *" << std::endl;
+                std::cout << "ENTROU NO *" << std::endl;
                 // novo roteador se conectou, vizinho novo, tem q adicionar na lista com metrica 0, olha no enunciado do trabalho
                 bool exists = false;
                 std::string ipVizinho = message.substr(1);
@@ -335,7 +340,7 @@ int main(int argc, char *argv[]) {
             if(ipList[i].second.first == messageAux){
                 std::cout << "Enviando para: " << ipList[i].first << std::endl;
                 routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
-                int sendLen = sendto(sockfd, messageUser.c_str(), messageUser.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+                int sendLen = sendto(sockfd, messageSend.c_str(), messageSend.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
                 if (sendLen < 0){
                     std::cerr << "Error sending message" << std::endl;
                 }
