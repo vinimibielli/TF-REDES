@@ -89,6 +89,15 @@ void receiveMessage(int sockfd)
                 std::string routerList = message.substr(1); // remove 1st char
                 std::string delimiter = "@";
                 std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
+
+                for(int i = 0; vizinhos.size(); i++){
+                    if (ipReceive == vizinhos[i].first)
+                            {
+                                std::cout << "Resetando timer do ip: " << ipReceive << std::endl;
+                                vizinhos[i].second = 35;
+                            }
+                }
+
                 while (routerList.size() > 0)
                 {
                     // separando o ip e a métrica
@@ -118,11 +127,6 @@ void receiveMessage(int sockfd)
                     {
                         for (int i = 0; i < ipList.size(); i++)
                         {
-
-                            if (ipReceive == vizinhos[i].first)
-                            {
-                                vizinhos[i].second = 35;
-                            }
 
                             if (ipList[i].second.first == ip)
                             {
@@ -178,7 +182,6 @@ void receiveMessage(int sockfd)
                 std::string ipVizinho = message.substr(1);
                 std::cout << ipVizinho << std::endl;
                 for(int i = 0; i < ipList.size(); i++) {
-                    std::cout << ipList.size() << std::endl;
                     if(ipList[i].second.first == ipVizinho) {
                         exists = true;
                         ipList[i].first = ipVizinho;
@@ -214,11 +217,11 @@ void sendIpList(int sockfd)
             message += "@" + ipList[i].second.first + "-" + std::to_string(ipList[i].second.second);
         }
 
-        if (ipList.size() > 0)
+        if (vizinhos.size() > 0)
         {
-            for (int i = 0; i < ipList.size(); i++)
+            for (int i = 0; i < vizinhos.size(); i++)
             {
-                routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
+                routerAddr.sin_addr.s_addr = inet_addr(vizinhos[i].first.c_str());
                 //std::cout << "IpList foi enviada para o ip: " << ipList[i].first << std::endl;
                 int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
                 if (sendLen < 0)
