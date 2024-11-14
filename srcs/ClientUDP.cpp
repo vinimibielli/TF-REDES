@@ -110,7 +110,7 @@ void receiveMessage(int sockfd)
             buffer[recvLen] = '\0';
 
             std::string message(buffer);
-            std::cout << "mensagem recebida foi: " << message << std::endl;
+            //std::cout << "mensagem recebida foi: " << message << std::endl;
             if (message[0] == '@')
             {   
                 //std::cout << "ENTROU NO @" << std::endl;
@@ -122,7 +122,7 @@ void receiveMessage(int sockfd)
                 for(int i = 0; i < vizinhos.size(); i++){
                     if (ipReceive == vizinhos[i].first)
                     {
-                        std::cout << "Resetando timer do ip: " << ipReceive << std::endl;
+                        //std::cout << "Resetando timer do ip: " << ipReceive << std::endl;
                         vizinhos[i].second = 35;
                     }
                 }
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
         return -1;
     }
     else {
-        std::cout << "Arquivo de configuracao lido - ";
+        std::cout << "Arquivo de configuracao lido" << std::endl;
     }
 
     std::string line;
@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < ipList.size(); i++)
         {
             if(ipList[i].second.first == messageAux){
-                std::cout << "Enviando para: " << ipList[i].first << std::endl;
+                //std::cout << "Enviando para: " << ipList[i].first << std::endl;
                 routerAddr.sin_addr.s_addr = inet_addr(ipList[i].first.c_str());
                 int sendLen = sendto(sockfd, messageSend.c_str(), messageSend.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
                 if (sendLen < 0){
