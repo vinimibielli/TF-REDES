@@ -90,12 +90,12 @@ void receiveMessage(int sockfd)
                 std::string delimiter = "@";
                 std::string ipReceive = std::string(inet_ntoa(receiveAddr.sin_addr));
 
-                for(int i = 0; vizinhos.size(); i++){
+                for(int i = 0; i < vizinhos.size(); i++){
                     if (ipReceive == vizinhos[i].first)
-                            {
-                                std::cout << "Resetando timer do ip: " << ipReceive << std::endl;
-                                vizinhos[i].second = 35;
-                            }
+                    {
+                        std::cout << "Resetando timer do ip: " << ipReceive << std::endl;
+                        vizinhos[i].second = 35;
+                    }
                 }
 
                 while (routerList.size() > 0)
@@ -120,6 +120,7 @@ void receiveMessage(int sockfd)
                     // teste printando eles
                     //std::cout << "router:" << router << " -> " << ip << "-" << metric << "\n";
 
+                    
 
                     // verificando se o ip já está na lista e caso não esteja, adicionando na lista e com a métrica maior
                     bool found = false;
@@ -222,6 +223,7 @@ void sendIpList(int sockfd)
             for (int i = 0; i < vizinhos.size(); i++)
             {
                 routerAddr.sin_addr.s_addr = inet_addr(vizinhos[i].first.c_str());
+                
                 //std::cout << "IpList foi enviada para o ip: " << ipList[i].first << std::endl;
                 int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
                 if (sendLen < 0)
