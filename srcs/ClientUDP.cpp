@@ -53,6 +53,35 @@ void sendMessage(int sockfd, std::string router, std::string &message)
     }
 }
 
+void sendIpListNow(int sockfd)
+{
+    struct sockaddr_in routerAddr;
+    socklen_t addrLen = sizeof(routerAddr);
+    routerAddr.sin_family = AF_INET;
+    routerAddr.sin_port = htons(PORT);
+    std::string message = "";
+    for (int i = 0; i < ipList.size(); i++)
+    {
+        message += "@" + ipList[i].second.first + "-" + std::to_string(ipList[i].second.second);
+    }
+
+    if (vizinhos.size() > 0)
+    {
+        for (int i = 0; i < vizinhos.size(); i++)
+        {
+            routerAddr.sin_addr.s_addr = inet_addr(vizinhos[i].first.c_str());
+            
+            //std::cout << "IpList foi enviada para o ip: " << ipList[i].first << std::endl;
+            int sendLen = sendto(sockfd, message.c_str(), message.length(), 0, (struct sockaddr *)&routerAddr, addrLen);
+            if (sendLen < 0)
+            {
+                std::cerr << "Error sending the ip list" << std::endl;
+            }
+        }
+    }
+    
+}
+
 void receiveMessage(int sockfd)
 {
     char buffer[BUFFER_SIZE];
@@ -81,7 +110,7 @@ void receiveMessage(int sockfd)
             buffer[recvLen] = '\0';
 
             std::string message(buffer);
-            //std::cout << "mensagem recebida foi: " << message << std::endl;
+            std::cout << "mensagem recebida foi: " << message << std::endl;
             if (message[0] == '@')
             {   
                 //std::cout << "ENTROU NO @" << std::endl;
@@ -98,6 +127,7 @@ void receiveMessage(int sockfd)
                     }
                 }
 
+                bool enviar = false;
                 while (routerList.size() > 0)
                 {
                     // separando o ip e a métrica
@@ -147,12 +177,16 @@ void receiveMessage(int sockfd)
                         if(ip != localIp) {
                             ipList.push_back(std::make_pair(ipReceive, std::make_pair(ip, (metric + 1))));
                             std::cout << "New router added: " << ip << std::endl;
+                            enviar = true;
                         }
                     }
 
                     // apagando a parte usada da mensagem para ir para a proxima 
                     routerList.erase(0, posIP + delimiter.length());
                     continue; 
+                }
+                if (enviar) {
+                    sendIpListNow(sockfd);
                 }
             }
             else if (message[0] == '!')
@@ -194,6 +228,7 @@ void receiveMessage(int sockfd)
                     std::cout << "New router connected: " << ipVizinho << std::endl;
                     ipList.push_back(std::make_pair(ipVizinho, std::make_pair(ipVizinho, 1)));
                     vizinhos.push_back(std::make_pair(ipVizinho, 35));
+                    sendIpListNow(sockfd);
                 }
             }
         }
